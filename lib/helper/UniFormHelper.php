@@ -11,8 +11,8 @@ function include_uniform($style = 'default', $validate = false)
 	$script = '/sfUniFormPlugin/js/uni-form'.$validation.'.jquery.js';
 	$response->addJavascript($script);
 	
-	use_helper('JavascriptBase');
-/*	echo javascript_tag('
+/*	use_helper('JavascriptBase');
+	echo javascript_tag('
 $(document).ready(function() {
 	$(".uniForm").uniform();
 }
@@ -20,16 +20,16 @@ $(document).ready(function() {
 ');*/
 }
 
-function uniform_render($form, $fields)
+function uniform_render($form, $fields, $renderTopErrors = true)
 {
-	//if (!is_array($fields)) $fields[$fields->getLabel()] = $fields;
+	$uniForm = new UniForm($form);
 	
 	$formRendered = '';
 	foreach($fields as $label => $field)
 	{
 		if (!is_array($field))
 		{
-			$content = _uniform_render_field($form, $field);
+			$content = $uniForm->renderRow($field);
 		}
 		else
 		{
@@ -41,15 +41,33 @@ function uniform_render($form, $fields)
 				$altLayout = true;
 			}
 			
-			$content = _uniform_render_multiple_fields($form, $label, $field, $altLayout);
+			$content = $uniForm->renderRow($name);
 		}
 	
-		$ctrlHolder = content_tag('div', $content, array('class'=>'ctrlHolder'));
 		
-		$formRendered .= $ctrlHolder."\n\n";
+		$formRendered .= $content."\n\n";
 	}
 	
-	return $formRendered;
+	$topErrors = $renderTopErrors? _uniform_render_top_errors($form): '';
+	
+	return $topErrors.$formRendered;
+}
+
+function _uniform_render_top_errors($form)
+{
+	if ($form->hasErrors())
+	{
+		$content = '';
+		foreach ($form->getErrorSchema()->getErrors() as $error)
+		{
+			$content .= content_tag('li', $error)."\n";
+		}
+		$ol = content_tag('ol', $content);
+		$h3 = content_tag('h3', 'Please correct the following errors:');
+		return content_tag('div', $h3."\n".$ol, array('id'=>'errorMsg'));
+	}
+	
+	return '';
 }
 
 function _uniform_render_multiple_fields($form, $label, $fields, $alt = false)
@@ -57,26 +75,39 @@ function _uniform_render_multiple_fields($form, $label, $fields, $alt = false)
 	$labelString = content_tag('p', $label, array('class'=>'label'));
 	
 	$liGroup = '';
+	$error = '';
 	foreach ($fields as $field)
 	{
-		$li = content_tag('li', _uniform_render_field($form, $field));
+		$fieldWidget = $form[$field];
+		$error = $fieldWidget->hasError()?' error':'';
+		$li = content_tag('li', __uniform_render_field($form, $fieldWidget, $error));
 		$liGroup .= $li;
 	}
 	
 	$ulOptions = $alt ? array('class'=>'alternate') : array();
 	
-	return $labelString.content_tag('ul', $liGroup, $ulOptions);
+	$ctrlHolder = content_tag('div', $labelString.content_tag('ul', $liGroup, $ulOptions), array('class'=>'ctrlHolder'.$error));
+	
+	return $ctrlHolder;
 }
 
-function _uniform_render_field($form, $field)
+function _uniform_render_single_field($form, $field)
 {
 	$fieldWidget = $form[$field];
-	$hint = content_tag('p', $form[$field]->renderHelp(), array('class'=>'formHint'));
-	
+	$error = $fieldWidget->hasError()?' error':'';
+	$ctrlHolder = content_tag('div', __uniform_render_field($form, $fieldWidget, $error), array('class'=>'ctrlHolder'.$error));
+
+	return  $ctrlHolder;	
+}
+
+function __uniform_render_field($form, $fieldWidget, $error)
+{
+
+	$hint = content_tag('p', $fieldWidget->renderHelp(), array('class'=>'formHint'));
 	$widgetType = _getWidgetType($fieldWidget);
-	
-	return  $fieldWidget->renderLabel()."\n"
-				.$fieldWidget->render(array('class'=>$widgetType))
+
+	return $fieldWidget->renderLabel()."\n"
+				.$fieldWidget->render(array('class'=>$widgetType.$error))
 				.$hint;
 }
 

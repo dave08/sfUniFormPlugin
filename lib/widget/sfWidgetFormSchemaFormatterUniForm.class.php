@@ -18,13 +18,49 @@
  */
 class sfWidgetFormSchemaFormatterUniForm extends sfWidgetFormSchemaFormatter
 {
-  protected
-    $rowFormat       = "<div class=\"ctrlHolder\">\n  %label% %error%\n  %field%\n<span class=\"formHint\">%help%<span>\n%hidden_fields%</div>\n",
-    $errorRowFormat  = "<span class=\"formError\">%errors%</span>\n",
-    $errorListFormatInARow     = "<span class=\"formError\">%errors%</span>\n",
-    $errorRowFormatInARow      = "%error% ",
-    $namedErrorRowFormatInARow = "%name%: %error%; ",
-    $helpFormat      = '<br />%help%',
-    $decoratorFormat = "<div>\n  %content%</div>";
- 
+	protected
+		$rowFormat       = "<div class=\"ctrlHolder\">\n\t%label%\n\t%field%\n\t%help%%error%\n%hidden_fields%</div>\n",
+		$errorRowFormat  = "<span class=\"formError\">%errors%</span>\n",
+		$errorListFormatInARow     = "<p class=\"formError\">%errors%</p>\n",
+		$errorRowFormatInARow      = '%error% ',
+		$namedErrorRowFormatInARow = "%name%: %error%; ",
+		$helpFormat      = '<p class="formHint">%help%</p>',
+		$decoratorFormat = "<div>\n  %content%</div>";
+	
+	protected 
+		$multiFieldFormat = "\t\t<li>%label% %field%</li>\n";
+
+	public function formatRow($label, $field, $errors = array(), $help = '', $hiddenFields = null)
+	{
+		$row = '';
+		if (count($errors) > 0)
+		{
+			$oldRowFormat = $this->rowFormat;
+			$this->rowFormat = str_replace('ctrlHolder', 'ctrlHolder error', $this->rowFormat);
+			
+			$row = parent::formatRow($label, $field, $errors, $help, $hiddenFields);
+			
+			$this->rowFormat = $oldRowFormat;
+		}
+		else
+		{
+			$row = parent::formatRow($label, $field, $errors, $help, $hiddenFields);
+		}
+		
+		return $row;
+	}
+	
+	public function getMultiFieldFormat()
+	{
+		return $this->multiFieldFormat;
+	}
+
+
+	public function formatMultiField($label, $field)
+	{
+		return strtr($this->getMultiFieldFormat(), array(
+		  '%label%'         => $label,
+		  '%field%'         => $field,
+		));
+	}
 }
