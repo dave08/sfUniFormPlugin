@@ -2,21 +2,21 @@
 
 Use this plugin by first initializing the scripts used:
 
-include_uniform();
+	include_uniform();
 
 Then by inserting this to display the fields:
 
-echo uniform_render($form, array(
-	'type',
-	'=Materials' => array(
-		'medium_id','surface_id'
-	),
-	'=Dimensions' => array(
-		'width','height'
-	),
-	'price',
-	'status'
-));
+	echo uniform_render($form, array(
+		'type',
+		'=Materials' => array(
+			'medium_id','surface_id'
+		),
+		'=Dimensions' => array(
+			'width','height'
+		),
+		'price',
+		'status'
+	));
 
 The sub arrays are for multi field sections and an '=' sign indicates if you want to use the alternate layout for those fields.
 
